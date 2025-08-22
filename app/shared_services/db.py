@@ -7,7 +7,9 @@ import psycopg2
 import requests
 from langchain_core.messages import HumanMessage, AIMessage
 from langgraph.graph import StateGraph, END, START
-from langgraph.prebuilt import ToolExecutor
+# ToolExecutor is not available in current langgraph version
+# Use ToolNode instead if needed
+# from langgraph.prebuilt import ToolNode
 from psycopg2.extras import Json, RealDictCursor
 from google.generativeai import GenerativeModel
 import numpy as np
