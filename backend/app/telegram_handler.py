@@ -13,8 +13,13 @@ from app.graph.graph import build_graph
 # Initialize FastAPI app
 app = FastAPI()
 
-# Initialize Telegram bot with token
-TELEGRAM_TOKEN = "8104473553:AAF-lQpLvIyZ2QQC5_ECyEFiSHm_x90C7wE"
+# Load environment variables
+load_dotenv()
+
+# Initialize Telegram bot with token from environment
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_BOT_TOKEN environment variable is required")
 
 # Create bot instance
 bot = Bot(token=TELEGRAM_TOKEN)

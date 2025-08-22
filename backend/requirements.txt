@@ -1,27 +1,18 @@
-# Core
-fastapi
-uvicorn[standard]
-pydantic==2.6.4
+fastapi==0.115.0
+uvicorn[standard]==0.38.5
+python-telegram-bot==20.8
 python-dotenv==1.0.1
-
-
-langchain-core==0.1.32
-langchain-openai==0.0.8
-langgraph>=0.0.30 # Ensure a recent version for checkpointer features
-
-# LLM (Example: OpenAI)
-openai>=1.0
-
-# Database Checkpointing (Async PostgreSQL)
-asyncpg>=0.28.0
-psycopg # aiopg checkpointer might still need psycopg for parsing the DSN
-SQLAlchemy>=2.0 # Often used indirectly or for utility with checkpointers
-psycopg2-binary aiopg
-# Other potential DB drivers if needed elsewhere:
-# psycopg2-binary
-
-pydantic-ai
-
-instructor>=0.4.8
-
-pydantic_ai>=0.1.0
+pydantic==2.9.2
+langchain-core==0.3.5
+langgraph==0.2.23
+langgraph-checkpoint==1.0.10
+openai==1.47.0
+groq==0.4.2
+instructor==1.0.0
+psycopg2-binary==2.9.9
+tavily-python==0.3.1
+twilio==9.5.2
+aiohttp==3.11.18
+aiohttp-retry==2.9.1
+requests==2.32.3
+python-multipart==0.0.9

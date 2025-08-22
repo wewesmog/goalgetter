@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import uuid
 import logging
+import os
 from dotenv import load_dotenv
 from twilio.twiml.messaging_response import MessagingResponse
 import uvicorn
@@ -35,7 +36,7 @@ graph = workflow.compile()
 logger.info("LangGraph built and compiled successfully.")
 
 # FastAPI App Instance
-app = FastAPI()
+app = FastAPI(title="MwalimuBot API", description="AI Educational Tutoring Chatbot")
 
 # Include the Telegram router at /telegram path
 app.mount("/telegram", telegram_app)
@@ -247,4 +248,5 @@ async def chat_json_endpoint(request: ChatRequest):
         )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)

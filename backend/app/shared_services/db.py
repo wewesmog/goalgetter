@@ -21,45 +21,54 @@ load_dotenv()
 logger = setup_logger()
 
 
-def get_postgres_connection(table_name: str):
+def get_postgres_connection(table_name: str = None):
     """
-    Establish and return a connection to the PostgreSQL database using Supabase direct connection.
-    For direct database connections, we use the connection string from Supabase Dashboard:
-    Settings -> Database -> Connection string -> URI
+    Establish and return a connection to the PostgreSQL database using Neon.
+    Supports both connection string and individual parameter configurations.
     
-    :param table_name: Name of the table to interact with
+    :param table_name: Name of the table to interact with (optional)
     :return: Connection object
     """
-    # Get Supabase connection details from environment variables
+    # First try to use DATABASE_URL (Neon connection string)
+    database_url = os.getenv("DATABASE_URL")
+    
+    if database_url:
+        try:
+            # Use connection string directly
+            conn = psycopg2.connect(database_url)
+            logger.info("Successfully connected to Neon database using connection string")
+            return conn
+        except Exception as e:
+            logger.warning(f"Failed to connect using DATABASE_URL: {e}")
+            logger.info("Falling back to individual parameters...")
+    
+    # Fallback to individual parameters (for backward compatibility)
     db_host = os.getenv("PGHOST")  # Host from connection string
     db_password = os.getenv("PGPASSWORD")  # Password from connection string
-    db_port = os.getenv("5432")
-    db_name = os.getenv("PGDATABASE")
+    db_port = os.getenv("PGPORT", "5432")  # Port from connection string, default to 5432
+    db_name = os.getenv("PGDATABASE")  # Database name from connection string
     db_user = os.getenv("PGUSER")  # User from connection string
 
-
-
-    if not all([db_host, db_password, db_user]):
-        error_msg = "Missing required  database credentials in environment variables"
+    if not all([db_host, db_password, db_user, db_name]):
+        error_msg = "Missing required database credentials in environment variables. Need either DATABASE_URL or individual PGHOST, PGPASSWORD, PGUSER, PGDATABASE"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
     try:
-        # Direct PostgreSQL connection to Supabase database
+        # Direct PostgreSQL connection to Neon database
         conn = psycopg2.connect(
             host=db_host,
             database=db_name,
             user=db_user,
             password=db_password,
             port=db_port
-        
         )
-        logger.info(f"Successfully connected to Supabase database: {db_name}")
+        logger.info(f"Successfully connected to Neon database: {db_name}")
         return conn
     except psycopg2.OperationalError as e:
-        logger.error(f"Unable to connect to  database. Error: {e}")
+        logger.error(f"Unable to connect to database. Error: {e}")
         raise
     except Exception as e:
-        logger.error(f"An unexpected error occurred while connecting to Supabase: {e}")
+        logger.error(f"An unexpected error occurred while connecting to database: {e}")
         raise
 
