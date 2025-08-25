@@ -3,7 +3,7 @@
 
 from typing import Dict, Any
 from langchain_core.messages import HumanMessage
-from app.models.pydantic_models import MwalimuBotState
+from app.models.pydantic_models import GoalGetterState
 
 import logging
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ async def respond_to_user_node(state: Dict[str, Any]) -> Dict[str, Any]:
     """Node for handling user communication and updating conversation history."""
     logger.info("===== Entering Respond to User Node ======")
   
-    current_state = state if isinstance(state, MwalimuBotState) else MwalimuBotState(**state)
+    current_state = state if isinstance(state, GoalGetterState) else GoalGetterState(**state)
     
     # Process message to user if there is one
     if current_state.message_to_student:
@@ -28,7 +28,7 @@ async def respond_to_user_node(state: Dict[str, Any]) -> Dict[str, Any]:
         "response_to_user_attempts": current_state.response_to_user_attempts + 1,
         "current_step": "respond_to_user",
         # Keep the message_to_user in the state so it can be sent in the API response
-        "message_to_student": current_state.message_to_student
+        "message_to_user": current_state.message_to_user
     }
     
     logger.info("===== Exiting Respond to User Node ======")

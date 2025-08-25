@@ -34,15 +34,43 @@ def get_postgres_connection(table_name: str = None):
     # First try to use DATABASE_URL (Neon connection string)
     database_url = os.getenv("DATABASE_URL")
     
-    if database_url:
+    if database_url and "neon.tech" in database_url:
         try:
-            # Use connection string directly
-            conn = psycopg2.connect(database_url)
-            logger.info("Successfully connected to Neon database using connection string")
+            # Clean the DATABASE_URL by removing unsupported parameters
+            from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+            
+            # Parse the URL
+            parsed = urlparse(database_url)
+            
+            # Remove problematic query parameters that Neon doesn't support
+            query_params = parse_qs(parsed.query)
+            problematic_params = ['search_path', 'options', 'sslmode']
+            
+            for param in problematic_params:
+                if param in query_params:
+                    del query_params[param]
+                    logger.info(f"Removed unsupported parameter: {param}")
+            
+            # Rebuild the URL without problematic parameters
+            clean_query = urlencode(query_params, doseq=True)
+            clean_url = urlunparse((
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                parsed.params,
+                clean_query,
+                parsed.fragment
+            ))
+            
+            # Use cleaned connection string
+            conn = psycopg2.connect(clean_url)
+            logger.info("Successfully connected to Neon database using cleaned connection string")
             return conn
         except Exception as e:
             logger.warning(f"Failed to connect using DATABASE_URL: {e}")
             logger.info("Falling back to individual parameters...")
+    elif database_url:
+        logger.info("DATABASE_URL found but not a Neon URL, using individual parameters...")
     
     # Fallback to individual parameters (for backward compatibility)
     db_host = os.getenv("PGHOST")  # Host from connection string

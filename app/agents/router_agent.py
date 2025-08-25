@@ -1,5 +1,5 @@
 
-# mwalimubot/backedn/app/agents/router_agent.py
+# goalgetter/app/agents/router_agent.py
 
 # --- Import Libraries ---
 import asyncio
@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from app.shared_services.llm import call_llm_api
 
 #Models
-from app.models.pydantic_models import MwalimuBotState, Handoff, TutorParameters, RespondToUserParameters
+from app.models.pydantic_models import GoalGetterState, RouterOutput, UserIntent
 #Prompts
 from app.prompts.routing_agent_prompt import get_routing_agent_prompt
 
@@ -36,21 +36,21 @@ async def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
     print("=== Router Node Start Execution ===")
 
     # Convert state dict to QuizState if it's not already
-    current_state = state if isinstance(state, MwalimuBotState) else MwalimuBotState(**state)
+    current_state = state if isinstance(state, GoalGetterState) else GoalGetterState(**state)
 
     # Increment router attempts
     current_state.router_attempts += 1
     print(f"Attempts: {current_state.router_attempts}")
 
     # Get user input from the prompt
-    user_input = current_state.user_input
+    user_input = current_state.message
     print(f"User Input: {user_input}")
 
     try:
         # Get the system prompt with user input and conversation history
         system_prompt = get_routing_agent_prompt(
-            user_input=user_input,
-            conversation_history=current_state.conversation_history
+           current_state=current_state
+     
         )
         
         # Call LLM with the prompt & structured output
@@ -63,15 +63,15 @@ async def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
             messages=messages,
             #model="gpt-4o-mini-2024-07-18",
             temperature=0.7,
-            response_format=Handoff
+            response_format=RouterOutput
         )
 
         print(f"Raw LLM Response: {response}")
 
         # Ensure response is a Handoff object
-        if not isinstance(response, Handoff):
+        if not isinstance(response, RouterOutput):
             print(f"Debug - Unexpected response type: {type(response)}")
-            raise TypeError("LLM response was not the expected Handoff object.")
+            raise TypeError("LLM response was not the expected RouterOutput object.")
 
         # Update node_history with the parsed LLM response object
         current_state.node_history.append({
@@ -82,54 +82,26 @@ async def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
         # Log state after router node (before returning changes)
         logger.info(f"State before processing response: {current_state}")
 
-        # # Process handoff agents - extract from the response
-        extracted_handoff_agents = []
-        extracted_quiz_params = None
-        message_to_student = None
-
-
-
-        if response.handoff_agents:
-            extracted_handoff_agents = response.handoff_agents
-            print(f"Extracted handoff agents: {extracted_handoff_agents}")
-
-            # Find quiz parameters if question_generator agent exists
-            for agent in extracted_handoff_agents:
-                if agent.agent_name == 'tutor_agent':
-                    if isinstance(agent.agent_specific_parameters, TutorParameters):
-                        extracted_tutor_params = agent.agent_specific_parameters
-                        print(f"Extracted titor parameters: {extracted_tutor_params}")
-                        break
-                    else:
-                        print(f"Warning: tutor_agent agent found but parameters are not TutorParameters type: {type(agent.agent_specific_parameters)}")
-                if agent.agent_name == 'respond_to_user':
-                    extracted_respond_params = agent.agent_specific_parameters
-                    message_to_student = extracted_respond_params.message_to_student
-                    print(f"Extracted respond parameters: {message_to_student}")
-                    break
-
         print("=== Router Node End Execution (Success) ===")
 
-        # Prepare the return dictionary
-        return_state = {
-            # "message_to_user": message_to_user,
-            "node_history": current_state.node_history,
-            "handoff_agents": [agent.agent_name for agent in extracted_handoff_agents],
-            "handoff_agents_params": [agent.model_dump() for agent in extracted_handoff_agents],
-            "current_step": "router",
-            "router_attempts": current_state.router_attempts,
-            "error_message": None,
-            "conversation_history": current_state.conversation_history,
-            "message_to_student": message_to_student if message_to_student else None
+        # Store router output in agent outputs (this is the only thing router agent should update)
+        current_state.agent_outputs.router_output = {
+            "next_agents": response.next_agents,
+            "reasoning": response.reasoning,
+            "confidence": response.confidence,
+            "intent": response.intent,
+            "success": response.success,
+            "error": None,
+            "message_to_user": response.message_to_user
         }
-
+        
         # --- Print State Exiting Node (Success) ---
         print("\n=== State Exiting Router Node (Success) ===")
-        print(return_state)
+        print(current_state.dict())
         print("=========================================\n")
-        # --- End Print ---
 
-        return return_state
+        # Return the updated state
+        return current_state.dict()
     
     except Exception as e:
         error_msg = f"Error in router node: {str(e)}"
@@ -144,20 +116,21 @@ async def router_node(state: Dict[str, Any]) -> Dict[str, Any]:
         logger.info(f"State after error in router node: {current_state}")
         print("=== Router Node End Execution (Error) ===")
 
-        # Prepare the return dictionary for error case
-        return_state = {
-            "node_history": current_state.node_history,
-            "current_step": "error",
-            "error_message": error_msg,
-            "handoff_agents": [],
-            "handoff_agents_params": [],
-            "conversation_history": current_state.conversation_history
+        # Store error in agent outputs (router agent only updates router_output)
+        current_state.agent_outputs.router_output = {
+            "next_agent": None,
+            "next_agents": [],
+            "confidence": 0.0,
+            "intent": UserIntent.UNKNOWN,
+            "success": False,
+            "error": error_msg,
+            "message_to_user": None
         }
-
+        
         # --- Print State Exiting Node (Error) ---
         print("\n=== State Exiting router Node (Error) ===")
-        print(return_state)
+        print(current_state.dict())
         print("=======================================\n")
-        # --- End Print ---
 
-        return return_state
+        # Return the updated state
+        return current_state.dict()

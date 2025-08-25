@@ -4,9 +4,7 @@ import os
 import uuid
 import json
 from dotenv import load_dotenv
-from app.agents.router_agent import router_node
-from app.agents.tutor_agent import tutor_node
-from app.models.pydantic_models import MwalimuBotState
+from app.models.pydantic_models import GoalGetterState
 from app.shared_services.save_load_conversation import save_conversation, load_conversation
 from app.graph.graph import build_graph
 
@@ -75,7 +73,7 @@ async def start(update: Update) -> None:
     user = update.message.from_user
     
     # Initialize new state for the user
-    initial_state = MwalimuBotState(
+    initial_state = GoalGetterState(
         user_id=chat_id,
         phone_number=chat_id,
         user_input="/start",
@@ -155,11 +153,11 @@ async def handle_message(update: Update) -> None:
             'user_name': user.first_name if user.first_name else "Student"
         })
         # Create state object with all fields
-        state = MwalimuBotState(**existing_state)
+        state = GoalGetterState(**existing_state)
         print(f"Loaded existing conversation for user {chat_id}")
     else:
         # Initialize new state with all required fields
-        state = MwalimuBotState(
+        state = GoalGetterState(
             user_id=chat_id,
             phone_number=chat_id,
             user_input=user_message,
