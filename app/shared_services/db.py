@@ -14,7 +14,7 @@ from psycopg2.extras import Json, RealDictCursor
 from google.generativeai import GenerativeModel
 import numpy as np
 from openai import OpenAI
-from tavily import TavilyClient
+#from tavily import TavilyClient
 from .logger_setup import setup_logger
 
 # Load environment variables

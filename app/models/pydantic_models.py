@@ -118,9 +118,18 @@ class Conversation(BaseModel):
     state: Dict[str, Any] = Field(default_factory=dict, description="Conversation state")
     created_at: datetime = Field(default_factory=datetime.now)
 
+
+
 # ============================================================================
 # AGENT INPUTS/OUTPUTS (PART OF MAIN STATE)
 # ============================================================================
+
+
+class Handoff(BaseModel):
+    """Handoff data"""
+    agent: str = Field(..., description="Agent or tool to handoff to")
+    reasoning: str = Field(..., description="Reasoning for the handoff")
+    agent_specific: Optional[str] = Field(None, description="Message to user")
 
 class RouterOutput(BaseModel):
     """Output for the router agent"""
