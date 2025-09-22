@@ -2,9 +2,6 @@ import os
 import uvicorn
 from app.mcp.db_tools_mcp import mcp
 
-# Expose the FastAPI app for Railway deployment
-app = mcp.app
-
 if __name__ == "__main__":
     print("Starting Goalgetter MCP server...")
     
@@ -18,4 +15,5 @@ if __name__ == "__main__":
     print(f"  - Railway: https://your-app.railway.app")
     print(f"  - API docs: http://localhost:{port}/docs")
     
-    uvicorn.run(app, host=host, port=port)
+    # Run FastMCP server directly
+    mcp.run(transport='http', host=host, port=port)
