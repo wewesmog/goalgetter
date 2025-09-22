@@ -23,7 +23,7 @@ async def health():
     return {"status": "healthy", "service": "goalgetter-mcp"}
 
 if __name__ == "__main__":
-    print("Starting Goalgetter MCP server...")
+    print("Starting Goalgetter MCP server... v2.0")
     
     # Always run as web server (HTTPS on Railway, HTTP locally)
     port = int(os.getenv("PORT", 8000))
