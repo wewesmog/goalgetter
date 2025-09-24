@@ -1341,11 +1341,22 @@ async def update_progress_log_tool(log_id: str,
     
 # Function to run the server
 def run_server():
-    mcp.run(transport='stdio')
+    import os
+    # Check if running in Railway (production) or locally
+    if os.getenv("RAILWAY_ENVIRONMENT"):
+        # Production: Run as HTTP server
+        port = int(os.getenv("PORT", 8000))
+        host = "0.0.0.0"
+        print(f"🚀 Production mode: Starting HTTP MCP server on {host}:{port}")
+        mcp.run(transport='sse', host=host, port=port)
+    else:
+        # Local development: Run in stdio mode
+        print("🏠 Local development mode: Starting stdio MCP server")
+        mcp.run(transport='stdio')
 
 if __name__ == "__main__":
     # Initialize and run the server
-    mcp.run(transport='stdio')
+    run_server()
 
 
 
